@@ -1,0 +1,113 @@
+{
+  "personal_info": {
+    "name": "Vishwa Patel",
+    "phone": "+91 9427120625",
+    "email": "vishva3254@gmail.com",
+    "github": "https://github.com/Vishva3254",
+    "linkedin": "https://www.linkedin.com/in/vishwa-patel-75a105288",
+    "profile_summary": "Building AI systems, breaking them, improving them and repeating the cycle until something cool happens."
+  },
+  "work_experience": [
+    {
+      "title": "Jr. AI Engineer",
+      "company": "Elaunch Solutions Pvt. Ltd",
+      "location": "Surat",
+      "duration": "February 2025 - Present",
+      "responsibilities": [
+        "Worked on Player churn prediction system and user behavior analysis for ibetting/igaming platform which will be used for player retention analysis.",
+        "Designed and deployed a multi-agent customer support chatbot for a casino platform using LangChain, LangGraph, Pydantic, and enabling LLM-powered RAG, multilingual conversations, and orchestration across 10+ systems.",
+        "Built robust orchestration and state management pipelines with dynamic agent routing, structured validation, and extended capabilities such as OCR, Turkish translation.",
+        "Led development of an agentic AI trading bot, integrating LLMs with real-time market data for autonomous trading and decision-making.",
+        "Enhanced an image recognition system for facial matching across large datasets, significantly improving model accuracy.",
+        "Developed a chat reply recommendation engine leveraging NLP, semantic similarity, and a LoRA fine-tuned BERT model.",
+        "Trained and evaluated deep learning architectures (GRU, LSTM, GRU-LSTM hybrid, CNN) for cryptocurrency price prediction using TensorFlow and Keras, conducting comparative performance analysis.",
+        "Built an MVP for English to Dari and Dari to English speech and text translation using libraries and models.",
+        "Utilized Python libraries including Pandas, NumPy, scikit-learn, and PyTorch for data analysis, model training, and experimentation.",
+        "Delivered production-ready, scalable AI systems through collaboration with DevOps, product, and business teams, ensuring reliability, performance, and cost efficiency."
+      ]
+    },
+    {
+      "title": "AI/ML Intern",
+      "company": "Wellorgs Infotech Pvt. Ltd.",
+      "location": "Remote",
+      "duration": "Nov 2024 - Jan 2025",
+      "responsibilities": [
+        "Developed and enhanced StudyBot AI, an intelligent education assistant for IELTS and SSC exam modules, focusing on data collection, question-answer generation, and automated answer validation using LLMs.",
+        "Built and deployed RESTful APIs with Flask, FastAPI, and Uvicorn, integrating GPT and LLaMA models to enable intelligent grading and evaluation systems.",
+        "Engaged in Prompt Engineering, NLP, web scraping, and automation tasks to streamline workflows, improve data quality, and enhance overall AI system efficiency."
+      ]
+    },
+    {
+      "title": "AI/ML Intern",
+      "company": "Tntra Innovation (Tix Ecosystem Pvt. Ltd.)",
+      "location": "Vadodara",
+      "duration": "May 2024 - Aug 2024",
+      "responsibilities": [
+        "Developed core modules for Shruti AI Engine, an LLM-powered business analysis assistant integrating Smart Search Engines (SSE) for intelligent data retrieval and insights.",
+        "Implemented feature engineering, data validation, and RAG pipelines, enabling summarization, semantic similarity matching, and text analytics.",
+        "Collaborated within Agile teams using Git, GitHub, JIRA, and other DevOps tools to ensure efficient version control, sprint planning, and project delivery."
+      ]
+    },
+    {
+      "title": "ASR Vetting Intern",
+      "company": "Pinnacle Works",
+      "location": "Remote",
+      "duration": "June 2023 - July 2023",
+      "responsibilities": [
+        "Validated ASR (Automatic Speech Recognition) outputs for Super Bot, ensuring high transcription accuracy between audio inputs and generated text.",
+        "Performed quality control and data curation on NLP datasets used for training and evaluation, contributing to improved language model accuracy and performance."
+      ]
+    }
+  ],
+  "research_paper": {
+    "title": "Predict Student Learning Using a Virtual Educational Game",
+    "acceptance": "IEEE EDUCON 2025",
+    "authors": 4,
+    "description": "Conducted research on predicting student performance through machine learning in a virtual educational game environment (Jo Wilder and the Capitol Case).",
+    "points": [
+      "Developed and evaluated six predictive models including KNN, Random Forest, MLP, CNN, and LSTM to analyze gameplay and clickstream data.",
+      "Achieved an F1-score of 0.83 and accuracy of 0.74 using an MLP model, outperforming baseline approaches.",
+      "Implemented feature engineering, data aggregation, and RAG pipelines to enhance model accuracy.",
+      "Explored student behavior patterns, identifying correlations between engagement time, day of the week, and learning outcomes.",
+      "Proposed applications for personalized learning recommendations and adaptive educational technologies."
+    ]
+  },
+  "professional_qualifications": [
+    "Future AWS AI Scientist (Nanodegree program 2025)",
+    "Oracle Certified Foundations Associate, Java SE 8 (1Z0-811)",
+    "Oracle Certified Professional, Java SE 11 Developer (1Z0-819)",
+    "Oracle Cloud Visual Builder Studio 2023 Application Associate (1Z0-1097-23)",
+    "Oracle Machine Learning using Autonomous Database 2024 Associate (1Z0-1096-24)",
+    "Oracle Database SQL Specialist (1Z0-914)",
+    "Oracle Database Program with PL/SQL Specialist (1Z0-913)"
+  ],
+  "achievements_scholarships": [
+    "ArcelorMittal Nippon Steel Beti Padhao Scholarship for Full Time B.E/B.Tech - Renewal (2024-25) by AM/NS",
+    "ArcelorMittal Nippon Steel Beti Padhao Scholarship for Full Time B.E/B.Tech - Renewal (2023-24) by AM/NS",
+    "AM/NS Beti Padhao Scholarship for Girls Pursuing Full-Time B.E./B.Tech Courses (2022–23) by AM/NS",
+    "TSS Sameer Aatmanirbhar scholarship for B.E./B.Tech Courses (2022-23) by TSS Sameer"
+  ],
+  "education": {
+    "university": "Parul University",
+    "location": "Vadodara, Gujrat",
+    "degree": "B.Tech in Computer Science with Artificial Intelligence",
+    "graduation": "May 2025",
+    "cgpa": "7.97"
+  },
+  "skills": {
+    "programming": ["Python", "Basic Java"],
+    "machine_learning_ai": ["LLMs", "LangChain", "LangGraph", "RAG", "Deep Learning", "NLP", "Model Fine-tuning"],
+    "frameworks": ["Pandas", "Numpy", "PyTorch", "Keras", "TensorFlow", "Scikit-learn", "OpenCV", "Transformers", "Hugging-Face"],
+    "api_development": ["FastAPI", "Flask", "Uvicorn", "Gunicorn", "RESTful API design", "Postman"],
+    "database_data_engineering": ["MySQL", "NoSQL", "MongoDB", "Data Preprocessing", "Feature Engineering", "ETL Pipelines"],
+    "tools": ["VSCode", "PyCharm", "Google Colab", "Hugging Face", "LmArena", "Jupyter", "Git", "Jira", "Github", "Antigravity"]
+  },
+  "extracurricular_activities": [
+    "NSS (National Service Scheme) Volunteer & Student Coordinator – Led volunteer initiatives, managed student teams, and organized social outreach programs.",
+    "NCC (National Cadet Corps) Cadet – Participated in disciplined training programs focused on leadership, discipline, teamwork, and national service.",
+    "National-Level Athlete & Team Captain – 4-time Nationals participant in Kho-Kho and Athletics, served as team captain twice.",
+    "Campus Ambassador - SVEEP (Systematic Voters' Education and Electoral Participation) – Promoted voter awareness and civic participation among students.",
+    "Hackathon Participant – Competed in multiple regional and national hackathons, contributing to AI/ML and problem-solving projects.",
+    "Team Leader - Women Startup Meet – Pitched a startup idea that was selected for incubation, leading the team through planning and presentation."
+  ]
+}

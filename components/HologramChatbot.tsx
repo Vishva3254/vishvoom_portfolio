@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Send, Mic, MicOff, Bot, X } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
 import Markdown from 'react-markdown';
+import cvData from '@/data/cv.json';
 
 export default function HologramChatbot({ onToggle }: { onToggle?: (isOpen: boolean) => void }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -43,7 +44,10 @@ export default function HologramChatbot({ onToggle }: { onToggle?: (isOpen: bool
         model: 'gemini-2.0-flash',
         contents: text,
         config: {
-          systemInstruction: "You are a futuristic AI assistant for Vishwa Patel's portfolio. Vishwa is an AI/ML Engineer from Surat, India. You should be helpful, sci-fi themed, and concise. You can talk about his projects in AI Agents, Computer Vision, Trading AI, and Speech AI. If asked about him, mention his research in student learning prediction (IEEE EDUCON 2025)."
+          systemInstruction: `You are a futuristic AI assistant for Vishwa Patel's portfolio. You should be helpful, sci-fi themed, and concise. You MUST answer questions ONLY based on the provided CV data below. If the user asks something not in the CV, politely decline and say you only have information about Vishwa's professional background. You can also engage in normal talk and greetings.
+
+Here is Vishwa's CV Data:
+${JSON.stringify(cvData, null, 2)}`
         }
       });
       
