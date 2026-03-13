@@ -6,8 +6,6 @@ import { Send, Mic, MicOff, Bot, X } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
 import Markdown from 'react-markdown';
 
-const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || '' });
-
 export default function HologramChatbot({ onToggle }: { onToggle?: (isOpen: boolean) => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<{ role: 'user' | 'bot'; text: string }[]>([
@@ -40,6 +38,7 @@ export default function HologramChatbot({ onToggle }: { onToggle?: (isOpen: bool
     setIsTyping(true);
 
     try {
+      const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || '' });
       const responseStream = await ai.models.generateContentStream({
         model: 'gemini-2.0-flash',
         contents: text,
