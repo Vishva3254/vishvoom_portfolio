@@ -22,9 +22,9 @@ export default function PlanetInfoPanel({
           initial={{ opacity: 0, scale: 0.9, x: 100 }}
           animate={{ opacity: 1, scale: 1, x: 0 }}
           exit={{ opacity: 0, scale: 0.9, x: 100 }}
-          className="fixed right-8 top-1/2 -translate-y-1/2 z-40 w-full max-w-md"
+          className="fixed right-4 md:right-8 left-4 md:left-auto top-1/2 -translate-y-1/2 z-40 w-auto md:w-full max-w-none md:max-w-md"
         >
-          <div className="relative p-6 bg-cyan-950/20 backdrop-blur-xl border border-cyan-500/30 rounded-2xl overflow-hidden">
+          <div className="relative p-6 pb-24 bg-cyan-950/20 backdrop-blur-xl border border-cyan-500/30 rounded-2xl overflow-y-auto max-h-[85vh] scrollbar-hide">
             {/* Holographic Scanline Effect */}
             <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-cyan-500/5 to-transparent h-[200%] animate-scanline" />
             

@@ -2,13 +2,13 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Send, Mic, MicOff, Bot, User } from 'lucide-react';
+import { Send, Mic, MicOff, Bot, X } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
 import Markdown from 'react-markdown';
 
 const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || '' });
 
-export default function HologramChatbot() {
+export default function HologramChatbot({ onToggle }: { onToggle?: (isOpen: boolean) => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<{ role: 'user' | 'bot'; text: string }[]>([
     { role: 'bot', text: "Hello to Vishwa's space lets explore it! I am your Neural Assistant. Use W, A, S, D or Arrow keys to move, and press Space to jump on a planet to explore its contents." }
@@ -26,6 +26,12 @@ export default function HologramChatbot() {
     }
   }, [messages]);
 
+  const handleToggle = () => {
+    const newState = !isOpen;
+    setIsOpen(newState);
+    if (onToggle) onToggle(newState);
+  };
+
   const handleSend = async (text: string) => {
     if (!text.trim()) return;
 
@@ -34,7 +40,7 @@ export default function HologramChatbot() {
     setIsTyping(true);
 
     try {
-      const response = await ai.models.generateContent({
+      const responseStream = await ai.models.generateContentStream({
         model: 'gemini-2.0-flash',
         contents: text,
         config: {
@@ -42,13 +48,34 @@ export default function HologramChatbot() {
         }
       });
       
-      const responseText = response.text || 'Neural link failed to retrieve data.';
+      let fullResponse = '';
+      let currentSentence = '';
+      setMessages(prev => [...prev, { role: 'bot', text: '' }]);
       
-      setMessages(prev => [...prev, { role: 'bot', text: responseText }]);
+      for await (const chunk of responseStream) {
+        const chunkText = chunk.text || '';
+        fullResponse += chunkText;
+        currentSentence += chunkText;
+        
+        setMessages(prev => {
+          const newMessages = [...prev];
+          newMessages[newMessages.length - 1].text = fullResponse;
+          return newMessages;
+        });
+
+        // Check for sentence boundaries to speak chunks
+        if (/[.!?]\s/.test(currentSentence) || currentSentence.endsWith('\n')) {
+          const utterance = new SpeechSynthesisUtterance(currentSentence.trim());
+          window.speechSynthesis.speak(utterance);
+          currentSentence = '';
+        }
+      }
       
-      // Text to Speech
-      const utterance = new SpeechSynthesisUtterance(responseText);
-      window.speechSynthesis.speak(utterance);
+      // Speak any remaining text
+      if (currentSentence.trim()) {
+        const utterance = new SpeechSynthesisUtterance(currentSentence.trim());
+        window.speechSynthesis.speak(utterance);
+      }
       
     } catch (error) {
       console.error('Chat error:', error);
@@ -87,80 +114,95 @@ export default function HologramChatbot() {
   };
 
   return (
-    <div className="fixed bottom-8 left-8 z-40">
+    <>
+      {/* Chatbot Toggle Button */}
+      <div className="fixed bottom-4 right-4 md:bottom-8 md:right-8 z-50">
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={handleToggle}
+          className="w-14 h-14 bg-cyan-500 rounded-full flex items-center justify-center shadow-lg shadow-cyan-500/50 text-black relative"
+        >
+          {isOpen ? <X size={28} /> : <Bot size={28} />}
+          {!isOpen && <div className="absolute inset-0 rounded-full border-2 border-cyan-400 animate-ping opacity-20" />}
+        </motion.button>
+      </div>
+
+      {/* Holographic Chat Interface */}
       <AnimatePresence>
         {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="mb-4 w-80 h-96 bg-cyan-950/40 backdrop-blur-xl border border-cyan-500/30 rounded-2xl flex flex-col overflow-hidden shadow-2xl shadow-cyan-500/20"
-          >
-            <div className="p-4 border-bottom border-cyan-500/20 bg-cyan-500/10 flex items-center gap-2">
-              <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" />
-              <span className="text-xs font-mono text-cyan-400 uppercase tracking-widest">Neural Assistant</span>
-            </div>
+          <>
+            {/* Message History (Right Side) */}
+            <motion.div
+              initial={{ opacity: 0, x: 50, scale: 0.9 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 50, scale: 0.9 }}
+              className="fixed right-4 md:right-16 left-4 md:left-auto top-1/2 -translate-y-1/2 z-40 w-auto md:w-96 h-[60vh] bg-cyan-950/40 backdrop-blur-xl border border-cyan-500/30 rounded-2xl flex flex-col overflow-hidden shadow-[0_0_50px_rgba(6,182,212,0.2)]"
+            >
+              <div className="p-4 border-b border-cyan-500/20 bg-cyan-500/10 flex items-center gap-2">
+                <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" />
+                <span className="text-xs font-mono text-cyan-400 uppercase tracking-widest">Neural Assistant</span>
+              </div>
 
-            <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
-              {messages.map((msg, i) => (
-                <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[80%] p-3 rounded-xl text-sm ${
-                    msg.role === 'user' 
-                      ? 'bg-cyan-500/20 text-white border border-cyan-500/30' 
-                      : 'bg-white/5 text-cyan-100 border border-white/10'
-                  }`}>
-                    <div className="markdown-body">
-                      <Markdown>{msg.text}</Markdown>
+              <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
+                {messages.map((msg, i) => (
+                  <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[85%] p-3 rounded-xl text-sm ${
+                      msg.role === 'user' 
+                        ? 'bg-cyan-500/20 text-white border border-cyan-500/30' 
+                        : 'bg-white/5 text-cyan-100 border border-white/10'
+                    }`}>
+                      <div className="markdown-body">
+                        <Markdown>{msg.text}</Markdown>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-              {isTyping && (
-                <div className="flex justify-start">
-                  <div className="bg-white/5 p-3 rounded-xl flex gap-1">
-                    <div className="w-1 h-1 bg-cyan-400 rounded-full animate-bounce" />
-                    <div className="w-1 h-1 bg-cyan-400 rounded-full animate-bounce [animation-delay:0.2s]" />
-                    <div className="w-1 h-1 bg-cyan-400 rounded-full animate-bounce [animation-delay:0.4s]" />
+                ))}
+                {isTyping && (
+                  <div className="flex justify-start">
+                    <div className="bg-white/5 p-3 rounded-xl flex gap-1">
+                      <div className="w-1 h-1 bg-cyan-400 rounded-full animate-bounce" />
+                      <div className="w-1 h-1 bg-cyan-400 rounded-full animate-bounce [animation-delay:0.2s]" />
+                      <div className="w-1 h-1 bg-cyan-400 rounded-full animate-bounce [animation-delay:0.4s]" />
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            </motion.div>
 
-            <div className="p-4 bg-black/20 flex gap-2">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSend(input)}
-                placeholder="Ask me anything..."
-                className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-cyan-500/50"
-              />
-              <button 
-                onClick={toggleListening}
-                className={`p-2 rounded-lg transition-colors ${isListening ? 'bg-red-500/20 text-red-400' : 'bg-white/5 text-cyan-400 hover:bg-white/10'}`}
-              >
-                {isListening ? <MicOff size={18} /> : <Mic size={18} />}
-              </button>
-              <button 
-                onClick={() => handleSend(input)}
-                className="p-2 bg-cyan-500 text-black rounded-lg hover:bg-cyan-400 transition-colors"
-              >
-                <Send size={18} />
-              </button>
-            </div>
-          </motion.div>
+            {/* Input Box (Bottom Center) */}
+            <motion.div
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 50 }}
+              className="fixed bottom-12 left-1/2 -translate-x-1/2 z-40 w-full max-w-2xl px-4"
+            >
+              <div className="p-2 bg-cyan-950/60 backdrop-blur-xl border border-cyan-500/40 rounded-2xl flex gap-2 shadow-[0_0_30px_rgba(6,182,212,0.3)]">
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSend(input)}
+                  placeholder="Ask me anything..."
+                  className="flex-1 bg-transparent px-4 py-3 text-sm text-white focus:outline-none font-mono placeholder:text-cyan-500/50"
+                />
+                <button 
+                  onClick={toggleListening}
+                  className={`p-3 rounded-xl transition-colors ${isListening ? 'bg-red-500/20 text-red-400' : 'bg-white/5 text-cyan-400 hover:bg-white/10'}`}
+                >
+                  {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+                </button>
+                <button 
+                  onClick={() => handleSend(input)}
+                  className="p-3 bg-cyan-500 text-black rounded-xl hover:bg-cyan-400 transition-colors"
+                >
+                  <Send size={20} />
+                </button>
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
-
-      <motion.button
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-14 h-14 bg-cyan-500 rounded-full flex items-center justify-center shadow-lg shadow-cyan-500/50 text-black relative"
-      >
-        <Bot size={28} />
-        <div className="absolute inset-0 rounded-full border-2 border-cyan-400 animate-ping opacity-20" />
-      </motion.button>
-    </div>
+    </>
   );
 }

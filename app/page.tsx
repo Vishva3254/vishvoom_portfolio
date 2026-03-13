@@ -15,6 +15,7 @@ export default function Home() {
   const [selectedPlanet, setSelectedPlanet] = useState<string | null>(null);
   const [showControls, setShowControls] = useState(false);
   const [introText, setIntroText] = useState("");
+  const [isChatOpen, setIsChatOpen] = useState(false);
   
   const { scrollYProgress } = useScroll();
   const scaleY = useSpring(scrollYProgress, {
@@ -99,6 +100,7 @@ export default function Home() {
             isStarted={isStarted}
             isIntro={isIntro}
             onIntroComplete={() => {}}
+            isChatOpen={isChatOpen}
           />
 
           {/* Start Overlay (Ensures user interaction for speech) */}
@@ -128,7 +130,16 @@ export default function Home() {
             onClose={() => setSelectedPlanet(null)} 
           />
           
-          {isStarted && <HologramChatbot />}
+          {isStarted && (
+            <HologramChatbot 
+              onToggle={(isOpen) => {
+                setIsChatOpen(isOpen);
+                if (isOpen) {
+                  setSelectedPlanet(null); // Return to robot when chat opens
+                }
+              }} 
+            />
+          )}
 
           {/* Robot Speech Bubble */}
           <AnimatePresence>
@@ -137,7 +148,7 @@ export default function Home() {
                 initial={{ opacity: 0, y: 20, scale: 0.8 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
-                className="fixed top-1/4 left-1/2 -translate-x-1/2 z-50 w-full max-w-md px-4"
+                className="fixed top-16 left-1/2 -translate-x-1/2 z-50 w-full max-w-md px-4"
               >
                 <div className="bg-cyan-950/80 backdrop-blur-xl border border-cyan-500/40 p-6 rounded-2xl shadow-[0_0_50px_rgba(6,182,212,0.3)] relative">
                   <div className="flex items-center justify-between mb-4">

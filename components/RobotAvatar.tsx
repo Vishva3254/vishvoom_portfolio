@@ -7,10 +7,12 @@ import * as THREE from 'three';
 
 export default function RobotAvatar({ 
   isIntro, 
-  onIntroComplete 
+  onIntroComplete,
+  isChatMode
 }: { 
   isIntro: boolean;
   onIntroComplete: () => void;
+  isChatMode: boolean;
 }) {
   const group = useRef<THREE.Group>(null!);
   const { camera } = useThree();
@@ -51,6 +53,14 @@ export default function RobotAvatar({
       group.current.scale.setScalar(5); // Large scale
       group.current.rotation.y = Math.sin(t) * 0.2; // Gentle sway
       
+      return;
+    }
+
+    if (isChatMode) {
+      // Move to center screen (like intro)
+      group.current.position.lerp(new THREE.Vector3(0, 0, 20), 0.05);
+      group.current.rotation.y = THREE.MathUtils.lerp(group.current.rotation.y, Math.sin(t) * 0.2, 0.05);
+      group.current.scale.lerp(new THREE.Vector3(5, 5, 5), 0.05);
       return;
     }
 
@@ -99,7 +109,7 @@ export default function RobotAvatar({
         jumpVelocity.current = 0;
       }
     } else {
-      group.current.position.y = Math.sin(t * 2) * 0.1;
+      group.current.position.y = THREE.MathUtils.lerp(group.current.position.y, Math.sin(t * 2) * 0.1, 0.1);
     }
   });
 

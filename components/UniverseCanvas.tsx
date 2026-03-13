@@ -15,13 +15,15 @@ export default function UniverseCanvas({
   onSelectPlanet,
   isStarted,
   isIntro,
-  onIntroComplete
+  onIntroComplete,
+  isChatOpen
 }: { 
   selectedPlanet: string | null, 
   onSelectPlanet: (id: string | null) => void,
   isStarted: boolean,
   isIntro: boolean,
-  onIntroComplete: () => void
+  onIntroComplete: () => void,
+  isChatOpen?: boolean
 }) {
   return (
     <div className="fixed inset-0 z-0 bg-black">
@@ -47,15 +49,15 @@ export default function UniverseCanvas({
           />
         ))}
         
-        <RobotAvatar isIntro={isIntro} onIntroComplete={onIntroComplete} />
+        <RobotAvatar isIntro={isIntro} onIntroComplete={onIntroComplete} isChatMode={isChatOpen} />
         
-        <CameraHandler selectedPlanet={selectedPlanet} isIntro={isIntro} />
+        <CameraHandler selectedPlanet={selectedPlanet} isIntro={isIntro} isChatOpen={isChatOpen} />
       </Canvas>
     </div>
   );
 }
 
-function CameraHandler({ selectedPlanet, isIntro }: { selectedPlanet: string | null, isIntro: boolean }) {
+function CameraHandler({ selectedPlanet, isIntro, isChatOpen }: { selectedPlanet: string | null, isIntro: boolean, isChatOpen?: boolean }) {
   const { camera, scene } = useThree();
   const targetPos = useRef(new THREE.Vector3(0, 5, 10));
   const targetLookAt = useRef(new THREE.Vector3(0, 0, 0));
@@ -63,7 +65,7 @@ function CameraHandler({ selectedPlanet, isIntro }: { selectedPlanet: string | n
   useFrame(() => {
     const robot = scene.getObjectByName('robot');
     
-    if (isIntro) {
+    if (isIntro || isChatOpen) {
       // Fixed intro camera
       camera.position.lerp(new THREE.Vector3(0, 5, 40), 0.05);
       camera.lookAt(0, 5, 0);
