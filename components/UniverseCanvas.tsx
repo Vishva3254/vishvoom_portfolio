@@ -49,7 +49,7 @@ export default function UniverseCanvas({
           />
         ))}
         
-        <RobotAvatar isIntro={isIntro} onIntroComplete={onIntroComplete} isChatMode={isChatOpen} />
+        <RobotAvatar isIntro={isIntro} onIntroComplete={onIntroComplete} isChatMode={!!isChatOpen} />
         
         <CameraHandler selectedPlanet={selectedPlanet} isIntro={isIntro} isChatOpen={isChatOpen} />
       </Canvas>

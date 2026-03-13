@@ -160,12 +160,12 @@ export default function RobotAvatar({
           <boxGeometry args={[0.2, 0.3, 0.1]} />
           <meshStandardMaterial color="#8a2be2" /> {/* Purple chest plate */}
         </mesh>
-        <mesh position={[0.1, 0.4, 0.4]}>
-          <cylinderGeometry args={[0.05, 0.05, 0.1, 8]} rotation={[Math.PI/2, 0, 0]} />
+        <mesh position={[0.1, 0.4, 0.4]} rotation={[Math.PI/2, 0, 0]}>
+          <cylinderGeometry args={[0.05, 0.05, 0.1, 8]} />
           <meshStandardMaterial color="#00ced1" /> {/* Teal button */}
         </mesh>
-        <mesh position={[-0.1, 0.4, 0.4]}>
-          <cylinderGeometry args={[0.05, 0.05, 0.1, 8]} rotation={[Math.PI/2, 0, 0]} />
+        <mesh position={[-0.1, 0.4, 0.4]} rotation={[Math.PI/2, 0, 0]}>
+          <cylinderGeometry args={[0.05, 0.05, 0.1, 8]} />
           <meshStandardMaterial color="#00ced1" /> {/* Teal button */}
         </mesh>
 
