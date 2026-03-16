@@ -57,7 +57,7 @@ export default function HologramChatbot({ onToggle }: { onToggle?: (isOpen: bool
         chatRef.current = ai.chats.create({
           model: 'gemini-2.0-flash',
           config: {
-            systemInstruction: `You are a futuristic AI assistant for Vishwa Patel's portfolio. You should be helpful, sci-fi themed, and concise. You MUST answer questions ONLY based on the provided CV data below. If the user asks something not in the CV, politely decline and say you only have information about Vishwa's professional background. You can also engage in normal talk and greetings.
+            systemInstruction: `You are a futuristic AI assistant for Vishwa Patel's portfolio. Vishwa is female, so you MUST use she/her pronouns when referring to her. You should be helpful, sci-fi themed, and concise. You MUST answer questions ONLY based on the provided CV data below. If the user asks something not in the CV, politely decline and say you only have information about Vishwa's professional background. You can also engage in normal talk and greetings.
             
 The current date and time is: ${currentDateTime}.
 
