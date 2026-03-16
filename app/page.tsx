@@ -26,7 +26,7 @@ export default function Home() {
   });
 
   const greeting = "Hello to Vishwa's space lets explore it!";
-  const instructions = "To move, use W A S D or the 4 arrow keys. To see any planet, click the Space bar.";
+  const instructions = "To fly your ship, use W A S D or the 4 arrow keys. To explore a planet, fly close to it and press the Space bar, or click on it.";
 
   const skipIntro = () => {
     window.speechSynthesis.cancel();

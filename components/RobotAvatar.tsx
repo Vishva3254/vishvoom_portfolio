@@ -4,30 +4,58 @@ import { useRef, useState, useEffect } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { Float, Trail } from '@react-three/drei';
 import * as THREE from 'three';
+import { planets } from '@/data/portfolio';
 
 export default function RobotAvatar({ 
   isIntro, 
   onIntroComplete,
-  isChatMode
+  isChatMode,
+  onSelectPlanet
 }: { 
   isIntro: boolean;
   onIntroComplete: () => void;
   isChatMode: boolean;
+  onSelectPlanet?: (id: string | null) => void;
 }) {
   const group = useRef<THREE.Group>(null!);
-  const { camera } = useThree();
+  const shipMesh = useRef<THREE.Group>(null!);
   
   const [keys, setKeys] = useState<Record<string, boolean>>({});
-  const velocity = useRef(new THREE.Vector3());
-  const isJumping = useRef(false);
-  const jumpVelocity = useRef(0);
-  const gravity = -0.015;
+  const velocity = useRef(0);
+  const maxSpeed = 0.6;
+  const acceleration = 0.02;
+  const deceleration = 0.01;
+  const turnSpeed = 0.03;
+  
+  const currentRoll = useRef(0);
+  const currentPitch = useRef(0);
   
   const elapsed = useRef(0);
   const introProgress = useRef(0);
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => setKeys(prev => ({ ...prev, [e.code]: true }));
+    const handleKeyDown = (e: KeyboardEvent) => {
+      setKeys(prev => ({ ...prev, [e.code]: true }));
+      
+      // Handle Space to select nearest planet
+      if (e.code === 'Space' && !isIntro && !isChatMode && onSelectPlanet && group.current) {
+        let nearestPlanet = null;
+        let minDistance = 20; // Maximum distance to interact
+        
+        planets.forEach(p => {
+          const pPos = new THREE.Vector3(...p.position);
+          const dist = group.current.position.distanceTo(pPos);
+          if (dist < minDistance) {
+            minDistance = dist;
+            nearestPlanet = p.id;
+          }
+        });
+        
+        if (nearestPlanet) {
+          onSelectPlanet(nearestPlanet);
+        }
+      }
+    };
     const handleKeyUp = (e: KeyboardEvent) => setKeys(prev => ({ ...prev, [e.code]: false }));
     
     window.addEventListener('keydown', handleKeyDown);
@@ -44,163 +72,152 @@ export default function RobotAvatar({
     const t = elapsed.current;
     
     if (isIntro) {
-      // Intro Animation: Rise from bottom and stay large
       introProgress.current = Math.min(introProgress.current + delta * 0.5, 1);
-      
-      // Position: Rise from y: -10 to y: 0
       const targetY = -10 + introProgress.current * 10;
-      group.current.position.set(0, targetY, 20); // Close to camera
-      group.current.scale.setScalar(5); // Large scale
-      group.current.rotation.y = Math.sin(t) * 0.2; // Gentle sway
-      
+      group.current.position.set(0, targetY, 20);
+      group.current.scale.setScalar(3);
+      group.current.rotation.y = Math.sin(t) * 0.2;
       return;
     }
 
     if (isChatMode) {
-      // Move to center screen (like intro)
       group.current.position.lerp(new THREE.Vector3(0, 0, 20), 0.05);
       group.current.rotation.y = THREE.MathUtils.lerp(group.current.rotation.y, Math.sin(t) * 0.2, 0.05);
-      group.current.scale.lerp(new THREE.Vector3(5, 5, 5), 0.05);
+      group.current.scale.lerp(new THREE.Vector3(3, 3, 3), 0.05);
+      
+      // Reset pitch and roll
+      if (shipMesh.current) {
+        shipMesh.current.rotation.z = THREE.MathUtils.lerp(shipMesh.current.rotation.z, 0, 0.1);
+        shipMesh.current.rotation.x = THREE.MathUtils.lerp(shipMesh.current.rotation.x, 0, 0.1);
+      }
       return;
     }
 
-    // Gameplay Transition: Shrink and move to world space
+    // Gameplay Transition
     group.current.scale.lerp(new THREE.Vector3(1, 1, 1), 0.05);
     
-    // Movement Logic
-    const speed = 0.2;
-    const direction = new THREE.Vector3();
-    
-    // Fixed camera direction for movement (no mouse look)
-    const moveDir = new THREE.Vector3(0, 0, -1);
-    const moveRight = new THREE.Vector3(1, 0, 0);
+    // Flight Logic
+    let isAccelerating = false;
+    let isReversing = false;
+    let isTurningLeft = false;
+    let isTurningRight = false;
 
-    if (keys['KeyW'] || keys['ArrowUp']) direction.add(moveDir);
-    if (keys['KeyS'] || keys['ArrowDown']) direction.sub(moveDir);
-    if (keys['KeyA'] || keys['ArrowLeft']) direction.sub(moveRight);
-    if (keys['KeyD'] || keys['ArrowRight']) direction.add(moveRight);
+    if (keys['KeyW'] || keys['ArrowUp']) isAccelerating = true;
+    if (keys['KeyS'] || keys['ArrowDown']) isReversing = true;
+    if (keys['KeyA'] || keys['ArrowLeft']) isTurningLeft = true;
+    if (keys['KeyD'] || keys['ArrowRight']) isTurningRight = true;
 
-    if (direction.length() > 0) {
-      direction.normalize().multiplyScalar(speed);
-      velocity.current.lerp(direction, 0.1);
-      
-      // Rotate robot to face movement direction
-      const targetRotation = Math.atan2(direction.x, direction.z);
-      group.current.rotation.y = THREE.MathUtils.lerp(group.current.rotation.y, targetRotation, 0.1);
+    // Acceleration & Deceleration
+    if (isAccelerating) {
+      velocity.current = Math.min(velocity.current + acceleration, maxSpeed);
+    } else if (isReversing) {
+      velocity.current = Math.max(velocity.current - acceleration, -maxSpeed * 0.5);
     } else {
-      velocity.current.lerp(new THREE.Vector3(), 0.1);
-    }
-
-    group.current.position.add(velocity.current);
-
-    // Jump Logic
-    if (keys['Space'] && !isJumping.current) {
-      isJumping.current = true;
-      jumpVelocity.current = 0.3;
-    }
-
-    if (isJumping.current) {
-      group.current.position.y += jumpVelocity.current;
-      jumpVelocity.current += gravity;
-
-      if (group.current.position.y <= 0) {
-        group.current.position.y = 0;
-        isJumping.current = false;
-        jumpVelocity.current = 0;
+      if (velocity.current > 0) {
+        velocity.current = Math.max(velocity.current - deceleration, 0);
+      } else if (velocity.current < 0) {
+        velocity.current = Math.min(velocity.current + deceleration, 0);
       }
-    } else {
-      group.current.position.y = THREE.MathUtils.lerp(group.current.position.y, Math.sin(t * 2) * 0.1, 0.1);
+    }
+
+    // Turning (Yaw)
+    if (isTurningLeft) {
+      group.current.rotation.y += turnSpeed;
+    }
+    if (isTurningRight) {
+      group.current.rotation.y -= turnSpeed;
+    }
+
+    // Apply movement along the current forward vector
+    const direction = new THREE.Vector3(0, 0, -1);
+    direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), group.current.rotation.y);
+    group.current.position.add(direction.multiplyScalar(velocity.current));
+
+    // Visual Banking (Roll) and Pitching
+    let targetRoll = 0;
+    let targetPitch = 0;
+
+    if (isTurningLeft) targetRoll = Math.PI / 4; // Bank left
+    if (isTurningRight) targetRoll = -Math.PI / 4; // Bank right
+    
+    if (isAccelerating) targetPitch = -Math.PI / 12; // Nose down when accelerating
+    if (isReversing) targetPitch = Math.PI / 12; // Nose up when reversing
+
+    currentRoll.current = THREE.MathUtils.lerp(currentRoll.current, targetRoll, 0.1);
+    currentPitch.current = THREE.MathUtils.lerp(currentPitch.current, targetPitch, 0.1);
+
+    if (shipMesh.current) {
+      shipMesh.current.rotation.z = currentRoll.current;
+      shipMesh.current.rotation.x = currentPitch.current;
+      
+      // Add a slight hover effect
+      shipMesh.current.position.y = Math.sin(t * 2) * 0.2;
     }
   });
 
   return (
     <group ref={group} name="robot">
-      <Float speed={2} rotationIntensity={0.1} floatIntensity={0.2}>
-        {/* Astronaut Suit Body */}
-        <mesh position={[0, 0.4, 0]}>
-          <capsuleGeometry args={[0.4, 0.6, 8, 16]} />
-          <meshStandardMaterial color="#ffffff" roughness={0.1} metalness={0.2} emissive="#222222" />
+      <group ref={shipMesh}>
+        {/* Main Hull */}
+        <mesh position={[0, 0, 0]} castShadow>
+          <coneGeometry args={[0.8, 3, 4]} />
+          <meshStandardMaterial color="#ffffff" roughness={0.2} metalness={0.8} flatShading />
         </mesh>
 
-        {/* Helmet */}
-        <group position={[0, 1.1, 0]}>
-          <mesh>
-            <sphereGeometry args={[0.45, 32, 32]} />
-            <meshStandardMaterial color="#ffffff" roughness={0.1} metalness={0.2} emissive="#222222" />
+        {/* Cockpit Glass */}
+        <mesh position={[0, 0.3, 0.5]} rotation={[-0.2, 0, 0]}>
+          <capsuleGeometry args={[0.3, 0.8, 4, 8]} />
+          <meshStandardMaterial color="#00f2ff" roughness={0.1} metalness={1} transparent opacity={0.8} />
+        </mesh>
+
+        {/* Left Wing */}
+        <mesh position={[-1.2, -0.2, 0.5]} rotation={[0, 0, -0.2]} castShadow>
+          <boxGeometry args={[2, 0.1, 1.5]} />
+          <meshStandardMaterial color="#222222" roughness={0.5} metalness={0.5} flatShading />
+        </mesh>
+        {/* Left Wing Tip */}
+        <mesh position={[-2.2, 0.2, 0.5]} rotation={[0, 0, -0.5]} castShadow>
+          <boxGeometry args={[0.1, 1, 1.5]} />
+          <meshStandardMaterial color="#00f2ff" roughness={0.2} metalness={0.8} emissive="#00f2ff" emissiveIntensity={0.5} />
+        </mesh>
+
+        {/* Right Wing */}
+        <mesh position={[1.2, -0.2, 0.5]} rotation={[0, 0, 0.2]} castShadow>
+          <boxGeometry args={[2, 0.1, 1.5]} />
+          <meshStandardMaterial color="#222222" roughness={0.5} metalness={0.5} flatShading />
+        </mesh>
+        {/* Right Wing Tip */}
+        <mesh position={[2.2, 0.2, 0.5]} rotation={[0, 0, 0.5]} castShadow>
+          <boxGeometry args={[0.1, 1, 1.5]} />
+          <meshStandardMaterial color="#00f2ff" roughness={0.2} metalness={0.8} emissive="#00f2ff" emissiveIntensity={0.5} />
+        </mesh>
+
+        {/* Engine Thrusters */}
+        <group position={[0, 0, 1.5]}>
+          <mesh position={[-0.4, -0.2, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.2, 0.3, 0.5, 8]} />
+            <meshStandardMaterial color="#333333" metalness={0.8} roughness={0.2} />
           </mesh>
-          {/* Visor */}
-          <mesh position={[0, 0, 0.1]}>
-            <sphereGeometry args={[0.4, 32, 32, 0, Math.PI * 2, 0, Math.PI * 0.6]} />
-            <meshStandardMaterial color="#000000" metalness={1} roughness={0} />
+          <mesh position={[0.4, -0.2, 0]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.2, 0.3, 0.5, 8]} />
+            <meshStandardMaterial color="#333333" metalness={0.8} roughness={0.2} />
           </mesh>
-        </group>
 
-        {/* Arms */}
-        <mesh position={[0.5, 0.6, 0]} rotation={[0, 0, -0.2]}>
-          <capsuleGeometry args={[0.12, 0.5, 4, 8]} />
-          <meshStandardMaterial color="#ffffff" />
-        </mesh>
-        <mesh position={[-0.5, 0.6, 0]} rotation={[0, 0, 0.2]}>
-          <capsuleGeometry args={[0.12, 0.5, 4, 8]} />
-          <meshStandardMaterial color="#ffffff" />
-        </mesh>
-
-        {/* Legs */}
-        <mesh position={[0.2, -0.1, 0]}>
-          <capsuleGeometry args={[0.15, 0.4, 4, 8]} />
-          <meshStandardMaterial color="#ffffff" />
-        </mesh>
-        <mesh position={[-0.2, -0.1, 0]}>
-          <capsuleGeometry args={[0.15, 0.4, 4, 8]} />
-          <meshStandardMaterial color="#ffffff" />
-        </mesh>
-
-        {/* Details (Purple/Teal Accents) */}
-        <mesh position={[0, 0.5, 0.35]}>
-          <boxGeometry args={[0.2, 0.3, 0.1]} />
-          <meshStandardMaterial color="#8a2be2" /> {/* Purple chest plate */}
-        </mesh>
-        <mesh position={[0.1, 0.4, 0.4]} rotation={[Math.PI/2, 0, 0]}>
-          <cylinderGeometry args={[0.05, 0.05, 0.1, 8]} />
-          <meshStandardMaterial color="#00ced1" /> {/* Teal button */}
-        </mesh>
-        <mesh position={[-0.1, 0.4, 0.4]} rotation={[Math.PI/2, 0, 0]}>
-          <cylinderGeometry args={[0.05, 0.05, 0.1, 8]} />
-          <meshStandardMaterial color="#00ced1" /> {/* Teal button */}
-        </mesh>
-
-        {/* Backpack Tube */}
-        <mesh position={[0, 1.2, -0.3]} rotation={[0.5, 0, 0]}>
-          <torusGeometry args={[0.3, 0.05, 8, 24, Math.PI]} />
-          <meshStandardMaterial color="#00ced1" />
-        </mesh>
-
-        {/* Thrusters */}
-        <group position={[0, -0.4, 0]}>
-          <Trail
-            width={1.5}
-            length={6}
-            color={new THREE.Color('#00f2ff')}
-            attenuation={(t) => t * t}
-          >
-            <mesh position={[0.2, 0, 0]}>
-              <sphereGeometry args={[0.1]} />
+          {/* Engine Trails */}
+          <Trail width={1.5} length={8} color={new THREE.Color('#00f2ff')} attenuation={(t) => t * t}>
+            <mesh position={[-0.4, -0.2, 0.2]}>
+              <sphereGeometry args={[0.15]} />
               <meshBasicMaterial color="#00f2ff" />
             </mesh>
           </Trail>
-          <Trail
-            width={1.5}
-            length={6}
-            color={new THREE.Color('#00f2ff')}
-            attenuation={(t) => t * t}
-          >
-            <mesh position={[-0.2, 0, 0]}>
-              <sphereGeometry args={[0.1]} />
+          <Trail width={1.5} length={8} color={new THREE.Color('#00f2ff')} attenuation={(t) => t * t}>
+            <mesh position={[0.4, -0.2, 0.2]}>
+              <sphereGeometry args={[0.15]} />
               <meshBasicMaterial color="#00f2ff" />
             </mesh>
           </Trail>
         </group>
-      </Float>
+      </group>
     </group>
   );
 }
