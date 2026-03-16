@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/purity */
 'use client';
 
 import { Canvas, useThree, useFrame } from '@react-three/fiber';

@@ -240,7 +240,7 @@ export default function Home() {
                 </div>
                 <div className="flex items-center gap-2 text-[10px] font-mono text-cyan-500/60 uppercase tracking-widest">
                   <span className="border border-cyan-500/40 px-1 rounded">SPACE</span>
-                  <span>Jump</span>
+                  <span>Explore</span>
                 </div>
               </motion.div>
             )}

@@ -65,7 +65,7 @@ export default function RobotAvatar({
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, []);
+  }, [isChatMode, isIntro, onSelectPlanet]);
   
   useFrame((state, delta) => {
     elapsed.current += delta;

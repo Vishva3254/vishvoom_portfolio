@@ -23,6 +23,7 @@ export default function BootSequence({ onComplete }: { onComplete: () => void })
 
   useEffect(() => {
     if (currentLine < BOOT_LINES.length) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTimestamps(prev => {
         if (prev.length <= currentLine) {
           return [...prev, new Date().toLocaleTimeString()];

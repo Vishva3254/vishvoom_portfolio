@@ -27,7 +27,7 @@ export const planets: PlanetData[] = [
     id: 'ai-agents',
     name: 'AI Agents Planet',
     description: 'Agentic AI systems and LLM orchestration.',
-    position: [15, 5, -20],
+    position: [15, 0, -20],
     color: '#7000ff',
     type: 'planet',
     projects: [
@@ -57,7 +57,7 @@ export const planets: PlanetData[] = [
     id: 'computer-vision',
     name: 'Computer Vision Planet',
     description: 'Vision projects and image models.',
-    position: [-20, -5, -40],
+    position: [-20, 0, -40],
     color: '#00ffaa',
     type: 'planet',
     projects: [
@@ -72,7 +72,7 @@ export const planets: PlanetData[] = [
     id: 'trading-ai',
     name: 'Trading AI Planet',
     description: 'Financial prediction and time series ML.',
-    position: [25, -10, -60],
+    position: [25, 0, -60],
     color: '#ffcc00',
     type: 'planet',
     projects: [
@@ -87,7 +87,7 @@ export const planets: PlanetData[] = [
     id: 'speech-ai',
     name: 'Speech AI Planet',
     description: 'Speech recognition and translation.',
-    position: [-10, 15, -80],
+    position: [-10, 0, -80],
     color: '#ff0066',
     type: 'planet',
     projects: [
@@ -107,7 +107,7 @@ export const planets: PlanetData[] = [
     id: 'research',
     name: 'Research Planet',
     description: 'IEEE research and experiments.',
-    position: [5, -20, -100],
+    position: [5, 0, -100],
     color: '#ffffff',
     type: 'planet',
     projects: [
@@ -122,7 +122,7 @@ export const planets: PlanetData[] = [
     id: 'experience',
     name: 'Experience Station',
     description: 'Professional experience timeline.',
-    position: [-30, 20, -120],
+    position: [-30, 0, -120],
     color: '#444444',
     type: 'station',
     projects: [
