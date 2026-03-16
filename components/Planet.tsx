@@ -82,10 +82,15 @@ export default function Planet({ data, onSelect, isSelected }: { data: PlanetDat
     <group position={data.position} ref={groupRef}>
       <Float speed={2} rotationIntensity={0.1} floatIntensity={0.5}>
         <group
-          onPointerOver={() => setHovered(true)}
-          onPointerOut={() => setHovered(false)}
+          onPointerOver={() => {
+            setHovered(true);
+            document.body.style.cursor = 'pointer';
+          }}
+          onPointerOut={() => {
+            setHovered(false);
+            document.body.style.cursor = 'auto';
+          }}
           onClick={() => onSelect(data.id)}
-          cursor={hovered ? 'pointer' : 'auto'}
         >
           {/* Main Island Base (Rock) */}
           <mesh position={[0, -0.8, 0]} scale={[2.5, 2, 2.5]} castShadow receiveShadow>
