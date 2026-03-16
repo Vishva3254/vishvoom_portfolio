@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useScroll, useSpring } from 'motion/react';
 import BootSequence from '@/components/BootSequence';
 import UniverseCanvas from '@/components/UniverseCanvas';
 import PlanetInfoPanel from '@/components/PlanetInfoPanel';
 import HologramChatbot from '@/components/HologramChatbot';
 import { Move, MousePointerClick } from 'lucide-react';
+import { getFemaleVoice } from '@/lib/voiceUtils';
 
 export default function Home() {
   const [booting, setBooting] = useState(true);
@@ -35,20 +36,41 @@ export default function Home() {
     setIntroText("");
   };
 
+  // Keep references to utterances to prevent garbage collection which breaks onend
+  const utterancesRef = useRef<SpeechSynthesisUtterance[]>([]);
+
   const startIntro = () => {
     setIsIntro(true);
+    window.speechSynthesis.cancel(); // Clear any pending speech
+
     const utterance1 = new SpeechSynthesisUtterance(greeting);
     const utterance2 = new SpeechSynthesisUtterance(instructions);
+    
+    const femaleVoice = getFemaleVoice();
+    if (femaleVoice) {
+      utterance1.voice = femaleVoice;
+      utterance2.voice = femaleVoice;
+    }
+
+    // Store references
+    utterancesRef.current = [utterance1, utterance2];
     
     setIntroText(greeting);
     window.speechSynthesis.speak(utterance1);
     
+    let nextCalled = false;
+    let finishCalled = false;
+
     const handleNext = () => {
+      if (nextCalled) return;
+      nextCalled = true;
       setIntroText(instructions);
       window.speechSynthesis.speak(utterance2);
     };
 
     const finishIntro = () => {
+      if (finishCalled) return;
+      finishCalled = true;
       setIsIntro(false);
       setIsStarted(true);
       setShowControls(true);
@@ -56,19 +78,25 @@ export default function Home() {
     };
 
     utterance1.onend = handleNext;
-    utterance2.onend = finishIntro;
+    utterance2.onend = () => {
+      setTimeout(finishIntro, 1000); // 1 second delay as requested
+    };
 
-    // Safety fallbacks
+    // Safety fallbacks in case onend doesn't fire
     setTimeout(() => {
-      if (introText === greeting) handleNext();
-    }, 6000);
+      handleNext();
+    }, 5000);
     
     setTimeout(() => {
-      if (isIntro) finishIntro();
-    }, 15000);
+      finishIntro();
+    }, 12000);
   };
 
   useEffect(() => {
+    // Pre-load voices on mount
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.getVoices();
+    }
     return () => {
       window.speechSynthesis.cancel();
     };

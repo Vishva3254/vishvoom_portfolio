@@ -3,9 +3,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Send, Mic, MicOff, Bot, X } from 'lucide-react';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, Chat } from '@google/genai';
 import Markdown from 'react-markdown';
 import cvData from '@/data/cv.json';
+import { getFemaleVoice } from '@/lib/voiceUtils';
 
 export default function HologramChatbot({ onToggle }: { onToggle?: (isOpen: boolean) => void }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -17,6 +18,7 @@ export default function HologramChatbot({ onToggle }: { onToggle?: (isOpen: bool
   const [isTyping, setIsTyping] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const chatRef = useRef<Chat | null>(null);
 
   useEffect(() => {
     // Scroll to bottom on new messages
@@ -28,6 +30,13 @@ export default function HologramChatbot({ onToggle }: { onToggle?: (isOpen: bool
   const handleToggle = () => {
     const newState = !isOpen;
     setIsOpen(newState);
+    if (!newState) {
+      // Clear memory and reset messages when closing
+      chatRef.current = null;
+      setMessages([
+        { role: 'bot', text: "Hello to Vishwa's space lets explore it! I am your Neural Assistant. Use W, A, S, D or Arrow keys to move, and press Space to jump on a planet to explore its contents." }
+      ]);
+    }
     if (onToggle) onToggle(newState);
   };
 
@@ -40,15 +49,26 @@ export default function HologramChatbot({ onToggle }: { onToggle?: (isOpen: bool
 
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || '' });
-      const responseStream = await ai.models.generateContentStream({
-        model: 'gemini-2.0-flash',
-        contents: text,
-        config: {
-          systemInstruction: `You are a futuristic AI assistant for Vishwa Patel's portfolio. You should be helpful, sci-fi themed, and concise. You MUST answer questions ONLY based on the provided CV data below. If the user asks something not in the CV, politely decline and say you only have information about Vishwa's professional background. You can also engage in normal talk and greetings.
+      
+      if (!chatRef.current) {
+        const now = new Date();
+        const currentDateTime = now.toLocaleString();
+        
+        chatRef.current = ai.chats.create({
+          model: 'gemini-2.0-flash',
+          config: {
+            systemInstruction: `You are a futuristic AI assistant for Vishwa Patel's portfolio. You should be helpful, sci-fi themed, and concise. You MUST answer questions ONLY based on the provided CV data below. If the user asks something not in the CV, politely decline and say you only have information about Vishwa's professional background. You can also engage in normal talk and greetings.
+            
+The current date and time is: ${currentDateTime}.
 
 Here is Vishwa's CV Data:
 ${JSON.stringify(cvData, null, 2)}`
-        }
+          }
+        });
+      }
+
+      const responseStream = await chatRef.current.sendMessageStream({
+        message: text
       });
       
       let fullResponse = '';
@@ -56,7 +76,8 @@ ${JSON.stringify(cvData, null, 2)}`
       setMessages(prev => [...prev, { role: 'bot', text: '' }]);
       
       for await (const chunk of responseStream) {
-        const chunkText = chunk.text || '';
+        const c = chunk as any;
+        const chunkText = c.text || '';
         fullResponse += chunkText;
         currentSentence += chunkText;
         
@@ -69,6 +90,8 @@ ${JSON.stringify(cvData, null, 2)}`
         // Check for sentence boundaries to speak chunks
         if (/[.!?]\s/.test(currentSentence) || currentSentence.endsWith('\n')) {
           const utterance = new SpeechSynthesisUtterance(currentSentence.trim());
+          const femaleVoice = getFemaleVoice();
+          if (femaleVoice) utterance.voice = femaleVoice;
           window.speechSynthesis.speak(utterance);
           currentSentence = '';
         }
@@ -77,6 +100,8 @@ ${JSON.stringify(cvData, null, 2)}`
       // Speak any remaining text
       if (currentSentence.trim()) {
         const utterance = new SpeechSynthesisUtterance(currentSentence.trim());
+        const femaleVoice = getFemaleVoice();
+        if (femaleVoice) utterance.voice = femaleVoice;
         window.speechSynthesis.speak(utterance);
       }
       

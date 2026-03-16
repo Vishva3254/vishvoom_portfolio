@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 
 const BOOT_LINES = [
@@ -14,9 +14,21 @@ const BOOT_LINES = [
 export default function BootSequence({ onComplete }: { onComplete: () => void }) {
   const [currentLine, setCurrentLine] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
+  const [timestamps, setTimestamps] = useState<string[]>([]);
+  const onCompleteRef = useRef(onComplete);
+
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
   useEffect(() => {
     if (currentLine < BOOT_LINES.length) {
+      setTimestamps(prev => {
+        if (prev.length <= currentLine) {
+          return [...prev, new Date().toLocaleTimeString()];
+        }
+        return prev;
+      });
       const timer = setTimeout(() => {
         setCurrentLine(prev => prev + 1);
       }, 800);
@@ -24,11 +36,11 @@ export default function BootSequence({ onComplete }: { onComplete: () => void })
     } else {
       const timer = setTimeout(() => {
         setIsFinished(true);
-        setTimeout(onComplete, 1000);
+        setTimeout(() => onCompleteRef.current(), 1000);
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [currentLine, onComplete]);
+  }, [currentLine]);
 
   return (
     <AnimatePresence>
@@ -51,7 +63,7 @@ export default function BootSequence({ onComplete }: { onComplete: () => void })
                 animate={{ opacity: 1, x: 0 }}
                 className="flex gap-2"
               >
-                <span className="text-cyan-600" suppressHydrationWarning>[{new Date().toLocaleTimeString()}]</span>
+                <span className="text-cyan-600">[{timestamps[i] || '...'}]</span>
                 <span>{line}</span>
               </motion.div>
             ))}
