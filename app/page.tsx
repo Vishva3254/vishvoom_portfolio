@@ -6,8 +6,21 @@ import BootSequence from '@/components/BootSequence';
 import UniverseCanvas from '@/components/UniverseCanvas';
 import PlanetInfoPanel from '@/components/PlanetInfoPanel';
 import HologramChatbot from '@/components/HologramChatbot';
-import { Move, MousePointerClick } from 'lucide-react';
+import { Move, MousePointerClick, Clock, User } from 'lucide-react';
 import { getFemaleVoice } from '@/lib/voiceUtils';
+
+function SystemTime() {
+  const [time, setTime] = useState("");
+  
+  useEffect(() => {
+    const updateTime = () => setTime(new Date().toLocaleTimeString('en-US', { hour12: false }));
+    updateTime();
+    const int = setInterval(updateTime, 1000);
+    return () => clearInterval(int);
+  }, []);
+
+  return <span>{time || "00:00:00"}</span>;
+}
 
 export default function Home() {
   const [booting, setBooting] = useState(true);
@@ -206,21 +219,65 @@ export default function Home() {
             )}
           </AnimatePresence>
 
-          {/* HUD Overlay */}
-          <div className="fixed top-8 left-8 z-30 pointer-events-none">
+          {/* HUD Overlays */}
+          <div className="fixed top-6 left-6 z-30 pointer-events-none">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="space-y-1"
+              className="relative px-6 py-4 border border-cyan-500/50 bg-transparent backdrop-blur-sm"
+              style={{
+                clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)'
+              } as React.CSSProperties}
             >
-              <h1 className="text-4xl font-black tracking-tighter text-white uppercase italic">
-                Vishwa Patel
-              </h1>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" />
-                <span className="text-xs font-mono text-cyan-400 uppercase tracking-[0.3em]">
-                  AI / Machine Learning Engineer
-                </span>
+              {/* Corner decor */}
+              <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-cyan-400" />
+              <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-cyan-400" />
+              
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <User size={14} className="text-cyan-400" />
+                  <span className="text-[10px] font-mono text-cyan-500 uppercase tracking-widest">Pilot Configuration</span>
+                </div>
+                <h1 className="text-2xl md:text-3xl font-black tracking-tighter text-white uppercase italic drop-shadow-[0_0_10px_rgba(6,182,212,0.8)]">
+                  Vishwa Patel
+                </h1>
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-cyan-400 shadow-[0_0_5px_#22d3ee] animate-pulse" />
+                  <span className="text-[10px] font-mono text-cyan-300 uppercase tracking-[0.2em] drop-shadow-[0_0_5px_rgba(6,182,212,0.8)]">
+                    AI / Machine Learning Engineer
+                  </span>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+
+          <div className="fixed top-6 right-6 z-30 pointer-events-none">
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="relative px-6 py-4 border border-cyan-500/50 bg-transparent backdrop-blur-sm"
+              style={{
+                clipPath: 'polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 15px 100%, 0 calc(100% - 15px))'
+              } as React.CSSProperties}
+            >
+              {/* Corner decor */}
+              <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-cyan-400" />
+              <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-cyan-400" />
+              
+              <div className="flex flex-col gap-1 items-end">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] font-mono text-cyan-500 uppercase tracking-widest">System Status</span>
+                  <Clock size={14} className="text-cyan-400" />
+                </div>
+                <div className="text-2xl md:text-3xl font-mono tracking-wider text-white drop-shadow-[0_0_10px_rgba(6,182,212,0.8)]">
+                  <SystemTime />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono text-cyan-300 uppercase tracking-[0.2em]">
+                    Neural Engine Linked
+                  </span>
+                  <div className="w-1.5 h-1.5 bg-green-400 shadow-[0_0_5px_#4ade80] rounded-full" />
+                </div>
               </div>
             </motion.div>
           </div>
