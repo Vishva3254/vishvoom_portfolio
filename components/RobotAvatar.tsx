@@ -1,10 +1,18 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useMemo, Suspense } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { Float, Trail } from '@react-three/drei';
+import { Float, Trail, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { planets } from '@/data/portfolio';
+
+function RobotModel() {
+  const { scene } = useGLTF('/elements/robot.glb');
+
+  // The robot is scaled up slightly and Y position is re-centered.
+  // Rotated PI/2 to align its native face model away from the camera during flight
+  return <primitive object={scene} scale={2.2} position={[0, 0, 0]} rotation={[0, Math.PI / 2, 0]} />;
+}
 
 export default function RobotAvatar({ 
   isIntro, 
@@ -19,11 +27,12 @@ export default function RobotAvatar({
 }) {
   const group = useRef<THREE.Group>(null!);
   const shipMesh = useRef<THREE.Group>(null!);
+  const boosterMesh = useRef<THREE.Mesh>(null!);
   
   const [keys, setKeys] = useState<Record<string, boolean>>({});
   const velocity = useRef(0);
-  const maxSpeed = 0.6;
-  const acceleration = 0.02;
+  const maxSpeed = 1.0;
+  const acceleration = 0.04;
   const deceleration = 0.01;
   const turnSpeed = 0.03;
   
@@ -32,6 +41,7 @@ export default function RobotAvatar({
   
   const elapsed = useRef(0);
   const introProgress = useRef(0);
+  const isRecovering = useRef(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -40,7 +50,7 @@ export default function RobotAvatar({
       // Handle Space to select nearest planet
       if (e.code === 'Space' && !isIntro && !isChatMode && onSelectPlanet && group.current) {
         let nearestPlanet = null;
-        let minDistance = 20; // Maximum distance to interact
+        let minDistance = 45; // Maximum distance to interact - must be > COLLISION_RADIUS (20)
         
         planets.forEach(p => {
           const pPos = new THREE.Vector3(...p.position);
@@ -76,14 +86,16 @@ export default function RobotAvatar({
       const targetY = -10 + introProgress.current * 10;
       group.current.position.set(0, targetY, 20);
       group.current.scale.setScalar(3);
-      group.current.rotation.y = Math.sin(t) * 0.2;
+      group.current.rotation.y = Math.PI + Math.sin(t) * 0.2;
+      isRecovering.current = true;
       return;
     }
 
     if (isChatMode) {
       group.current.position.lerp(new THREE.Vector3(0, 0, 20), 0.05);
-      group.current.rotation.y = THREE.MathUtils.lerp(group.current.rotation.y, Math.sin(t) * 0.2, 0.05);
+      group.current.rotation.y = THREE.MathUtils.lerp(group.current.rotation.y, Math.PI + Math.sin(t) * 0.2, 0.05);
       group.current.scale.lerp(new THREE.Vector3(3, 3, 3), 0.05);
+      isRecovering.current = true;
       
       // Reset pitch and roll
       if (shipMesh.current) {
@@ -91,6 +103,16 @@ export default function RobotAvatar({
         shipMesh.current.rotation.x = THREE.MathUtils.lerp(shipMesh.current.rotation.x, 0, 0.1);
       }
       return;
+    }
+
+    // Recover rotation to 0 after intro or chat mode
+    if (isRecovering.current) {
+      const diff = THREE.MathUtils.clamp(0 - group.current.rotation.y, -0.1, 0.1);
+      group.current.rotation.y += diff;
+      if (Math.abs(group.current.rotation.y) < 0.01) {
+        group.current.rotation.y = 0;
+        isRecovering.current = false;
+      }
     }
 
     // Gameplay Transition
@@ -131,7 +153,29 @@ export default function RobotAvatar({
     // Apply movement along the current forward vector
     const direction = new THREE.Vector3(0, 0, -1);
     direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), group.current.rotation.y);
-    group.current.position.add(direction.multiplyScalar(velocity.current));
+    
+    const nextPosition = group.current.position.clone().add(direction.clone().multiplyScalar(velocity.current));
+    let hasCollision = false;
+    const COLLISION_RADIUS = 10; // Tight boundary to let robot fly cut-to-cut with the planet
+
+    for (const p of planets) {
+      const pPos = new THREE.Vector3(p.position[0], p.position[1], p.position[2]);
+      const currentDist = group.current.position.distanceTo(pPos);
+      const nextDist = nextPosition.distanceTo(pPos);
+      
+      // Block movement only if we are inside the boundary AND trying to move closer
+      if (nextDist < COLLISION_RADIUS && nextDist < currentDist) {
+        hasCollision = true;
+        break;
+      }
+    }
+
+    if (!hasCollision) {
+      group.current.position.copy(nextPosition);
+    } else {
+      // Bounce effect
+      velocity.current = -velocity.current * 0.5;
+    }
 
     // Visual Banking (Roll) and Pitching
     let targetRoll = 0;
@@ -153,70 +197,28 @@ export default function RobotAvatar({
       // Add a slight hover effect
       shipMesh.current.position.y = Math.sin(t * 2) * 0.2;
     }
+
+    if (boosterMesh.current) {
+      const thrust = THREE.MathUtils.clamp(velocity.current / maxSpeed, 0, 1.5);
+      boosterMesh.current.scale.set(1, thrust, 1);
+      (boosterMesh.current.material as THREE.MeshBasicMaterial).opacity = thrust * 0.8;
+      // Flickering effect based on time
+      boosterMesh.current.position.z = 1.5 + Math.random() * (thrust * 0.2);
+    }
   });
 
   return (
     <group ref={group} name="robot">
       <group ref={shipMesh}>
-        {/* Main Hull */}
-        <mesh position={[0, 0, 0]} castShadow>
-          <coneGeometry args={[0.8, 3, 4]} />
-          <meshStandardMaterial color="#ffffff" roughness={0.2} metalness={0.8} flatShading />
+        <Suspense fallback={null}>
+          <RobotModel />
+        </Suspense>
+        
+        {/* Dynamic Booster Flame attached to the back of the Robot */}
+        <mesh ref={boosterMesh} position={[0, -0.6, 1.5]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0, 0.4, 2, 16]} />
+          <meshBasicMaterial color="#00f2ff" transparent opacity={0} blending={THREE.AdditiveBlending} depthWrite={false} />
         </mesh>
-
-        {/* Cockpit Glass */}
-        <mesh position={[0, 0.3, 0.5]} rotation={[-0.2, 0, 0]}>
-          <capsuleGeometry args={[0.3, 0.8, 4, 8]} />
-          <meshStandardMaterial color="#00f2ff" roughness={0.1} metalness={1} transparent opacity={0.8} />
-        </mesh>
-
-        {/* Left Wing */}
-        <mesh position={[-1.2, -0.2, 0.5]} rotation={[0, 0, -0.2]} castShadow>
-          <boxGeometry args={[2, 0.1, 1.5]} />
-          <meshStandardMaterial color="#222222" roughness={0.5} metalness={0.5} flatShading />
-        </mesh>
-        {/* Left Wing Tip */}
-        <mesh position={[-2.2, 0.2, 0.5]} rotation={[0, 0, -0.5]} castShadow>
-          <boxGeometry args={[0.1, 1, 1.5]} />
-          <meshStandardMaterial color="#00f2ff" roughness={0.2} metalness={0.8} emissive="#00f2ff" emissiveIntensity={0.5} />
-        </mesh>
-
-        {/* Right Wing */}
-        <mesh position={[1.2, -0.2, 0.5]} rotation={[0, 0, 0.2]} castShadow>
-          <boxGeometry args={[2, 0.1, 1.5]} />
-          <meshStandardMaterial color="#222222" roughness={0.5} metalness={0.5} flatShading />
-        </mesh>
-        {/* Right Wing Tip */}
-        <mesh position={[2.2, 0.2, 0.5]} rotation={[0, 0, 0.5]} castShadow>
-          <boxGeometry args={[0.1, 1, 1.5]} />
-          <meshStandardMaterial color="#00f2ff" roughness={0.2} metalness={0.8} emissive="#00f2ff" emissiveIntensity={0.5} />
-        </mesh>
-
-        {/* Engine Thrusters */}
-        <group position={[0, 0, 1.5]}>
-          <mesh position={[-0.4, -0.2, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.2, 0.3, 0.5, 8]} />
-            <meshStandardMaterial color="#333333" metalness={0.8} roughness={0.2} />
-          </mesh>
-          <mesh position={[0.4, -0.2, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <cylinderGeometry args={[0.2, 0.3, 0.5, 8]} />
-            <meshStandardMaterial color="#333333" metalness={0.8} roughness={0.2} />
-          </mesh>
-
-          {/* Engine Trails */}
-          <Trail width={1.5} length={8} color={new THREE.Color('#00f2ff')} attenuation={(t) => t * t}>
-            <mesh position={[-0.4, -0.2, 0.2]}>
-              <sphereGeometry args={[0.15]} />
-              <meshBasicMaterial color="#00f2ff" />
-            </mesh>
-          </Trail>
-          <Trail width={1.5} length={8} color={new THREE.Color('#00f2ff')} attenuation={(t) => t * t}>
-            <mesh position={[0.4, -0.2, 0.2]}>
-              <sphereGeometry args={[0.15]} />
-              <meshBasicMaterial color="#00f2ff" />
-            </mesh>
-          </Trail>
-        </group>
       </group>
     </group>
   );
