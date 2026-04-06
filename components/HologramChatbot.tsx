@@ -143,16 +143,24 @@ ${JSON.stringify(cvData, null, 2)}`
 
   return (
     <>
-      {/* Chatbot Toggle Button */}
+      {/* Chatbot Toggle Button / Radar Icon */}
       <div className="fixed bottom-4 right-4 md:bottom-8 md:right-8 z-50">
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
-          onClick={handleToggle}
-          className="w-14 h-14 bg-cyan-500 rounded-full flex items-center justify-center shadow-lg shadow-cyan-500/50 text-black relative"
+          onClick={(e) => {
+            e.currentTarget.blur();
+            handleToggle();
+          }}
+          className="w-16 h-16 rounded-full flex items-center justify-center relative bg-black/20 backdrop-blur-sm border border-cyan-500/50 shadow-[0_0_15px_rgba(6,182,212,0.5)] group overflow-hidden"
         >
-          {isOpen ? <X size={28} /> : <Bot size={28} />}
-          {!isOpen && <div className="absolute inset-0 rounded-full border-2 border-cyan-400 animate-ping opacity-20" />}
+          {/* Wireframe Gyro Rings */}
+          <div className="absolute inset-2 rounded-full border border-cyan-400/50 border-dashed animate-[spin_4s_linear_infinite]" />
+          <div className="absolute inset-1 rounded-full border-t border-b border-cyan-300 animate-[spin_6s_linear_infinite_reverse]" />
+          
+          <div className="relative z-10 text-cyan-400 drop-shadow-[0_0_8px_rgba(6,182,212,1)]">
+            {isOpen ? <X size={26} /> : <div className="flex flex-col items-center justify-center"><Bot size={22}/><span className="text-[6px] font-mono tracking-widest mt-0.5">LINK</span></div>}
+          </div>
         </motion.button>
       </div>
 
@@ -165,9 +173,10 @@ ${JSON.stringify(cvData, null, 2)}`
               initial={{ opacity: 0, x: 50, scale: 0.9 }}
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={{ opacity: 0, x: 50, scale: 0.9 }}
-              className="fixed right-4 md:right-16 left-4 md:left-auto top-1/2 -translate-y-1/2 z-40 w-auto md:w-96 h-[60vh] bg-cyan-950/40 backdrop-blur-xl border border-cyan-500/30 rounded-2xl flex flex-col overflow-hidden shadow-[0_0_50px_rgba(6,182,212,0.2)]"
+              className="fixed right-4 md:right-16 left-4 md:left-auto top-1/2 -translate-y-1/2 z-40 w-auto md:w-96 h-[60vh] bg-black/20 backdrop-blur-md border border-cyan-500/50 flex flex-col overflow-hidden shadow-[0_0_30px_rgba(6,182,212,0.2)]"
+              style={{ clipPath: 'polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px)' } as React.CSSProperties}
             >
-              <div className="p-4 border-b border-cyan-500/20 bg-cyan-500/10 flex items-center gap-2">
+              <div className="p-4 border-b border-cyan-500/30 flex items-center gap-2">
                 <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" />
                 <span className="text-xs font-mono text-cyan-400 uppercase tracking-widest">Neural Assistant</span>
               </div>
@@ -175,10 +184,10 @@ ${JSON.stringify(cvData, null, 2)}`
               <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
                 {messages.map((msg, i) => (
                   <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[85%] p-3 rounded-xl text-sm ${
+                    <div className={`max-w-[85%] p-3 text-sm border-l-2 ${
                       msg.role === 'user' 
-                        ? 'bg-cyan-500/20 text-white border border-cyan-500/30' 
-                        : 'bg-white/5 text-cyan-100 border border-white/10'
+                        ? 'border-cyan-400 bg-cyan-500/10 text-white' 
+                        : 'border-white/50 bg-white/5 text-cyan-100'
                     }`}>
                       <div className="markdown-body">
                         <Markdown>{msg.text}</Markdown>
@@ -205,14 +214,17 @@ ${JSON.stringify(cvData, null, 2)}`
               exit={{ opacity: 0, y: 50 }}
               className="fixed bottom-12 left-1/2 -translate-x-1/2 z-40 w-full max-w-2xl px-4"
             >
-              <div className="p-2 bg-cyan-950/60 backdrop-blur-xl border border-cyan-500/40 rounded-2xl flex gap-2 shadow-[0_0_30px_rgba(6,182,212,0.3)]">
+              <div 
+                className="p-1 pl-4 bg-black/40 backdrop-blur-lg border border-cyan-500/40 flex gap-2 shadow-[0_0_30px_rgba(6,182,212,0.3)] items-center"
+                style={{ clipPath: 'polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px)' }}
+              >
                 <input
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSend(input)}
-                  placeholder="Ask me anything..."
-                  className="flex-1 bg-transparent px-4 py-3 text-sm text-white focus:outline-none font-mono placeholder:text-cyan-500/50"
+                  placeholder="Initiate neural transfer..."
+                  className="flex-1 bg-transparent py-3 text-sm text-white focus:outline-none font-mono placeholder:text-cyan-500/50"
                 />
                 <button 
                   onClick={toggleListening}
@@ -222,7 +234,7 @@ ${JSON.stringify(cvData, null, 2)}`
                 </button>
                 <button 
                   onClick={() => handleSend(input)}
-                  className="p-3 bg-cyan-500 text-black rounded-xl hover:bg-cyan-400 transition-colors"
+                  className="p-3 my-1 mr-1 bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 hover:bg-cyan-400 hover:text-black transition-colors"
                 >
                   <Send size={20} />
                 </button>
