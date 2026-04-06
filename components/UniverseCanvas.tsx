@@ -2,8 +2,8 @@
 'use client';
 
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
-import { PerspectiveCamera, PointerLockControls } from '@react-three/drei';
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { PerspectiveCamera, PointerLockControls, useTexture } from '@react-three/drei';
+import { useState, useEffect, useRef, useMemo, Suspense } from 'react';
 import * as THREE from 'three';
 import Stars from './Stars';
 import Planet from './Planet';
@@ -58,6 +58,19 @@ function AsteroidField() {
   );
 }
 
+function UniverseBackground() {
+  const texture = useTexture('/elements/universe.png');
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.mapping = THREE.EquirectangularReflectionMapping;
+
+  return (
+    <mesh>
+      <sphereGeometry args={[4000, 64, 64]} />
+      <meshBasicMaterial map={texture} side={THREE.BackSide} />
+    </mesh>
+  );
+}
+
 export default function UniverseCanvas({ 
   selectedPlanet, 
   onSelectPlanet,
@@ -78,8 +91,10 @@ export default function UniverseCanvas({
       <Canvas shadows>
         <PerspectiveCamera makeDefault position={[0, 20, 40]} fov={75} />
         
-        <color attach="background" args={['#000000']} />
-        <fog attach="fog" args={['#000000', 30, 150]} />
+        <Suspense fallback={<color attach="background" args={['#000000']} />}>
+          <UniverseBackground />
+        </Suspense>
+        <fog attach="fog" args={['#000000', 300, 1500]} />
         
         <ambientLight intensity={1} />
         <pointLight position={[10, 10, 10]} intensity={2} color="#ffffff" />
@@ -130,7 +145,9 @@ function CameraHandler({ selectedPlanet, isIntro, isChatOpen }: { selectedPlanet
     if (selectedPlanet) {
       const planet = planets.find(p => p.id === selectedPlanet);
       if (planet) {
-        targetPos.current.set(planet.position[0], planet.position[1] + 2, planet.position[2] + 10);
+        // Park camera outside the planet (scale is 35, so 70 units away prevents clipping inside)
+        targetPos.current.set(planet.position[0], planet.position[1] + 10, planet.position[2] + 70);
+        // Look at the center of the planet from the outside
         targetLookAt.current.set(planet.position[0], planet.position[1], planet.position[2]);
         camera.position.lerp(targetPos.current, 0.05);
         camera.lookAt(targetLookAt.current);
