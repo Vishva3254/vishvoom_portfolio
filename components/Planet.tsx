@@ -1,24 +1,54 @@
 'use client';
 
-import { useRef, useState, useMemo } from 'react';
+import { useRef, useState, useMemo, Suspense } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Text, Float, Sparkles } from '@react-three/drei';
+import { Text, Float, Sparkles, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { PlanetData } from '@/data/portfolio';
 
 // Helper to generate random positions
 const randomRange = (min: number, max: number) => Math.random() * (max - min) + min;
 
+function PlanetModel({ url, isSelected, hovered, color }: { url: string, isSelected: boolean, hovered: boolean, color: string }) {
+  const { scene } = useGLTF(url);
+  const cloned = useMemo(() => scene.clone(), [scene]);
+  
+  // Ensure the planet casts and receives shadows for a realistic look
+  useMemo(() => {
+    cloned.traverse((child) => {
+      if ((child as THREE.Mesh).isMesh) {
+        const mesh = child as THREE.Mesh;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+      }
+    });
+  }, [cloned]);
+
+  return (
+    <group>
+      {/* Lights strategically placed around the planet to highlight its geography/crystals */}
+      <pointLight position={[10, 15, 10]} color={color} intensity={250} distance={4000} decay={1.2} />
+      <pointLight position={[-10, -15, -10]} color={color} intensity={150} distance={4000} decay={1.2} />
+      
+      <primitive object={cloned} position={[0, 0, 0]} scale={35} />
+    </group>
+  );
+}
+
 export default function Planet({ data, onSelect, isSelected }: { data: PlanetData, onSelect: (id: string) => void, isSelected: boolean }) {
   const groupRef = useRef<THREE.Group>(null!);
   const [hovered, setHovered] = useState(false);
 
   const elapsed = useRef(0);
+  
+  // Async rotation speed and initial offset
+  const rotationSpeed = useMemo(() => 0.05 + Math.random() * 0.15, []);
+  const initialRotation = useMemo(() => Math.random() * Math.PI * 2, []);
 
   useFrame((state, delta) => {
     elapsed.current += delta;
     if (groupRef.current) {
-      groupRef.current.rotation.y += 0.002;
+      groupRef.current.rotation.y = initialRotation + (elapsed.current * rotationSpeed);
       if (isSelected) {
         const t = elapsed.current;
         groupRef.current.position.y = data.position[1] + Math.sin(t) * 0.2;
@@ -92,78 +122,7 @@ export default function Planet({ data, onSelect, isSelected }: { data: PlanetDat
           }}
           onClick={() => onSelect(data.id)}
         >
-          {/* Main Island Base (Rock) */}
-          <mesh position={[0, -0.8, 0]} scale={[2.5, 2, 2.5]} castShadow receiveShadow>
-            <dodecahedronGeometry args={[1, 1]} />
-            <meshStandardMaterial color={rockColor} roughness={0.9} flatShading />
-          </mesh>
-          
-          {/* Secondary Rock for asymmetry */}
-          <mesh position={[0.8, -0.4, 0.5]} scale={[1.8, 1.5, 1.8]} castShadow receiveShadow>
-            <dodecahedronGeometry args={[1, 0]} />
-            <meshStandardMaterial color={rockColor} roughness={0.9} flatShading />
-          </mesh>
-
-          <mesh position={[-0.8, -0.6, -0.5]} scale={[2, 1.2, 2]} castShadow receiveShadow>
-            <dodecahedronGeometry args={[1, 0]} />
-            <meshStandardMaterial color={rockColor} roughness={0.9} flatShading />
-          </mesh>
-
-          {/* Grass Top */}
-          <mesh position={[0, 0.6, 0]} scale={[2.4, 0.4, 2.4]} castShadow receiveShadow>
-            <cylinderGeometry args={[1, 1.1, 1, 8, 1]} />
-            <meshStandardMaterial color={grassColor} roughness={1} flatShading />
-          </mesh>
-
-          {/* Crystals */}
-          {crystals.map((c, i) => (
-            <mesh key={`crystal-${i}`} position={c.position} rotation={c.rotation} scale={c.scale}>
-              <cylinderGeometry args={[0.5, 0.5, 1, 6]} />
-              <meshStandardMaterial 
-                color={crystalColor} 
-                emissive={crystalColor}
-                emissiveIntensity={hovered || isSelected ? 1.5 : 0.8}
-                transparent 
-                opacity={0.85} 
-                roughness={0.1}
-                metalness={0.8}
-                flatShading
-              />
-            </mesh>
-          ))}
-
-          {/* Trees */}
-          {trees.map((t, i) => (
-            <group key={`tree-${i}`} position={t.position} scale={t.scale}>
-              {/* Trunk */}
-              <mesh position={[0, 0.25, 0]}>
-                <cylinderGeometry args={[0.1, 0.1, 0.5, 5]} />
-                <meshStandardMaterial color="#78350f" roughness={0.9} flatShading />
-              </mesh>
-              {/* Leaves */}
-              <mesh position={[0, 0.8, 0]}>
-                <coneGeometry args={[0.4, 1, 5]} />
-                <meshStandardMaterial color="#166534" roughness={0.8} flatShading />
-              </mesh>
-            </group>
-          ))}
-
-          {/* Bottom Stalactites (Glowing) */}
-          {stalactites.map((s, i) => (
-            <mesh key={`stalactite-${i}`} position={s.position} rotation={s.rotation} scale={s.scale}>
-              <cylinderGeometry args={[0, 0.5, 1, 5]} />
-              <meshStandardMaterial 
-                color={crystalColor} 
-                emissive={crystalColor}
-                emissiveIntensity={hovered || isSelected ? 1.2 : 0.6}
-                transparent 
-                opacity={0.8}
-                flatShading
-              />
-            </mesh>
-          ))}
-
-          {/* Floating Particles/Bubbles */}
+          {/* Floating Particles around the completely replaced planet */}
           <Sparkles 
             count={60} 
             scale={7} 
@@ -172,12 +131,13 @@ export default function Planet({ data, onSelect, isSelected }: { data: PlanetDat
             opacity={hovered || isSelected ? 1 : 0.6} 
             color={crystalColor} 
           />
-          
-          {/* Core Glow */}
-          <mesh position={[0, 0, 0]}>
-            <sphereGeometry args={[2.5, 16, 16]} />
-            <meshBasicMaterial color={crystalColor} transparent opacity={hovered || isSelected ? 0.15 : 0.05} />
-          </mesh>
+
+          {/* Planet 3D Model overlaid */}
+          {data.modelPath && (
+            <Suspense fallback={null}>
+              <PlanetModel url={data.modelPath} isSelected={isSelected} hovered={hovered} color={data.color} />
+            </Suspense>
+          )}
         </group>
       </Float>
 
