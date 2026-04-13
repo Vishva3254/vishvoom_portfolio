@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useProgress } from '@react-three/drei';
 
 const BOOT_LINES = [
   "Booting AI Exploration System...",
@@ -12,6 +13,7 @@ const BOOT_LINES = [
 ];
 
 export default function BootSequence({ onComplete }: { onComplete: () => void }) {
+  const { progress, active } = useProgress();
   const [currentLine, setCurrentLine] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
   const [timestamps, setTimestamps] = useState<string[]>([]);
@@ -30,6 +32,12 @@ export default function BootSequence({ onComplete }: { onComplete: () => void })
         }
         return prev;
       });
+
+      // Pause at "Scanning Knowledge Galaxy..." (index 3) until loading is complete
+      if (currentLine === 3 && active) {
+        return; // Wait here until active is false
+      }
+
       const timer = setTimeout(() => {
         setCurrentLine(prev => prev + 1);
       }, 800);
@@ -41,7 +49,7 @@ export default function BootSequence({ onComplete }: { onComplete: () => void })
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [currentLine]);
+  }, [currentLine, active]);
 
   return (
     <AnimatePresence>
@@ -65,7 +73,11 @@ export default function BootSequence({ onComplete }: { onComplete: () => void })
                 className="flex gap-2"
               >
                 <span className="text-cyan-600">[{timestamps[i] || '...'}]</span>
-                <span>{line}</span>
+                <span>
+                  {i === 3 && currentLine === 3 && active 
+                    ? `Scanning Knowledge Galaxy... [${Math.round(progress)}%]` 
+                    : line}
+                </span>
               </motion.div>
             ))}
             
